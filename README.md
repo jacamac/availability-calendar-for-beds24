@@ -45,18 +45,23 @@ Note that the number of months can be selected independantly for desktop, tablet
 ```
 [avail_calendar roomid="12345" nummonths="5" lang="fr"]
 [avail_calendar propid="67890" nummonths="3" lang="en"]
+[avail_calendar roomid="12345" nummonths="3" nummonthstablet="2" nummonthsmobile="1" lang="fr"]
 ```
 
 ### Attributes
 
-| Attribute    | Default      | Description                                        |
-|--------------|--------------|----------------------------------------------------|
-| `roomid`     | —            | Beds24 room ID (use `roomid` OR `propid`, not both)|
-| `propid`     | —            | Beds24 property ID                                 |
-| `nummonths`  | `5`          | Months to display (1–24)                           |
-| `startmonth` | current      | Starting month (1–12)                              |
-| `startyear`  | current      | Starting year (2020–2100)                          |
-| `lang`       | `en`         | BCP-47 locale, e.g. `fr`, `de`, `es`, `it`, `nl`  |
+| Attribute         | Default              | Description                                         |
+|-------------------|----------------------|-----------------------------------------------------|
+| `roomid`          | —                    | Beds24 room ID (use `roomid` OR `propid`, not both) |
+| `propid`          | —                    | Beds24 property ID                                  |
+| `nummonths`       | `5`                  | Months shown on desktop (1–12)                      |
+| `nummonthstablet` | same as `nummonths`  | Months shown on tablet, 768–1024 px (1–12)          |
+| `nummonthsmobile` | same as `nummonths`  | Months shown on mobile, < 768 px (1–12)             |
+| `startmonth`      | current              | Starting month (1–12)                               |
+| `startyear`       | current              | Starting year (2020–2100)                           |
+| `lang`            | `en`                 | BCP-47 locale, e.g. `fr`, `de`, `es`, `it`, `nl`    |
+
+The device tier is decided in the visitor's browser from the viewport width, and the calendar re-renders if the window is resized across a tier.
 
 ---
 

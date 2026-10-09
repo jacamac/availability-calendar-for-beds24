@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.6.0
+Stable tag:         1.6.1
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,16 +38,23 @@ Display a calendar for a specific room:
 Display a calendar for a whole property:
   [avail_calendar propid="67890" nummonths="3" lang="en"]
 
+Show 3 months on desktop, 2 on tablet and 1 on mobile:
+  [avail_calendar roomid="12345" nummonths="3" nummonthstablet="2" nummonthsmobile="1" lang="fr"]
+
 = Shortcode Attributes =
 
-| Attribute    | Default | Description                                      |
-|--------------|---------|--------------------------------------------------|
-| roomid       | —       | Beds24 room ID (use roomid OR propid, not both)  |
-| propid       | —       | Beds24 property ID                               |
-| nummonths    | 5       | Number of months to display (1–24)               |
-| startmonth   | current | Starting month (1–12)                            |
-| startyear    | current | Starting year (2020–2100)                        |
-| lang         | en      | BCP-47 locale tag, e.g. fr, de, es, it, nl       |
+| Attribute       | Default           | Description                                      |
+|-----------------|-------------------|--------------------------------------------------|
+| roomid          | —                 | Beds24 room ID (use roomid OR propid, not both)  |
+| propid          | —                 | Beds24 property ID                               |
+| nummonths       | 5                 | Months shown on desktop (1–12)                   |
+| nummonthstablet | same as nummonths | Months shown on tablet, 768–1024 px (1–12)       |
+| nummonthsmobile | same as nummonths | Months shown on mobile, < 768 px (1–12)          |
+| startmonth      | current           | Starting month (1–12)                            |
+| startyear       | current           | Starting year (2020–2100)                        |
+| lang            | en                | BCP-47 locale tag, e.g. fr, de, es, it, nl       |
+
+The device tier is decided in the visitor's browser from the viewport width, and the calendar re-renders if the window is resized across a tier.
 
 == Privacy Notes ==
 
@@ -60,6 +67,10 @@ Display a calendar for a whole property:
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.6.1 =
+* Fix: the [avail_calendar] shortcode now accepts nummonthstablet and nummonthsmobile (previously dropped by shortcode_atts), matching the Elementor widget's per-device month counts
+* Docs: document the per-device attributes; correct the month range to 1–12
 
 = 1.6.0 =
 * Add display schemes: five named presets (Solid, Minimal, Outline, Soft, Dot) selectable from the Elementor Style tab or via the `scheme` shortcode attribute

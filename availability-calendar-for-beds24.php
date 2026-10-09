@@ -3,7 +3,7 @@
  * Plugin Name:       Availability Calendar for Beds24
  * Plugin URI:        https://github.com/jacamac/availability-calendar-for-beds24
  * Description:       Displays a Beds24 room or property availability calendar via the [avail_calendar] shortcode and an Elementor widget.
- * Version:           1.6.0
+ * Version:           1.6.1
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            Jacques Leisy
@@ -32,7 +32,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BAC_VERSION', '1.6.0' );
+define( 'BAC_VERSION', '1.6.1' );
 define( 'BAC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BAC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BAC_DEFAULT_MONTHS_DESKTOP', 3 );
@@ -370,12 +370,14 @@ function bac_sanitize_config( array $raw ): array {
 	SHORTCODE  [avail_calendar]
 
 	Attributes:
-	roomid      — Beds24 room ID  (roomid OR propid, not both)
-	propid      — Beds24 property ID
-	nummonths   — months to display (1-24, default 5)
-	startmonth  — starting month 1-12 (default: current month)
-	startyear   — starting year (default: current year)
-	lang        — BCP-47 locale override, e.g. 'fr'
+	roomid          — Beds24 room ID  (roomid OR propid, not both)
+	propid          — Beds24 property ID
+	nummonths       — months on desktop (1-12, default 5)
+	nummonthstablet — months on tablet, 768-1024 px (1-12, default: nummonths)
+	nummonthsmobile — months on mobile, < 768 px (1-12, default: nummonths)
+	startmonth      — starting month 1-12 (default: current month)
+	startyear       — starting year (default: current year)
+	lang            — BCP-47 locale override, e.g. 'fr'
 					Omit to use TranslatePress / WP locale automatically
 
 	Examples:
@@ -395,20 +397,22 @@ add_shortcode( 'avail_calendar', 'bac_shortcode' );
 function bac_shortcode( $atts ): string {
 	$atts = shortcode_atts(
 		array(
-			'roomid'         => '',
-			'propid'         => '',
-			'nummonths'      => '5',
-			'startmonth'     => '',
-			'startyear'      => '',
-			'lang'           => '',   // empty = auto-detect.
-			'scheme'         => 'solid',
-			'scheme_shape'   => '',
-			'scheme_avail'   => '',
-			'scheme_unavail' => '',
-			'scheme_past'    => '',
-			'scheme_hover'   => '',
-			'scheme_today'   => '',
-			'scheme_nav'     => '',
+			'roomid'          => '',
+			'propid'          => '',
+			'nummonths'       => '5',
+			'nummonthstablet' => '',   // empty = same as nummonths.
+			'nummonthsmobile' => '',   // empty = same as nummonths.
+			'startmonth'      => '',
+			'startyear'       => '',
+			'lang'            => '',   // empty = auto-detect.
+			'scheme'          => 'solid',
+			'scheme_shape'    => '',
+			'scheme_avail'    => '',
+			'scheme_unavail'  => '',
+			'scheme_past'     => '',
+			'scheme_hover'    => '',
+			'scheme_today'    => '',
+			'scheme_nav'      => '',
 		),
 		$atts,
 		'avail_calendar'

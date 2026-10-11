@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.6.1
+Stable tag:         1.7.0
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,10 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.7.0 =
+* Fix: language auto-detection now uses TranslatePress's $TRP_LANGUAGE global. trp_get_current_language()/trp_get_language() do not exist in TranslatePress 3.x, so the calendar always fell back to the site locale on translated pages
+* New: Beds24 booking links (beds24.com/booking*.php) anywhere on the page get their `lang` parameter set to the current page language, replacing an existing value or appending it. Front-end HTML only. Disable with add_filter( 'bac_rewrite_booking_links', '__return_false' )
 
 = 1.6.1 =
 * Fix: the [avail_calendar] shortcode now accepts nummonthstablet and nummonthsmobile (previously dropped by shortcode_atts), matching the Elementor widget's per-device month counts

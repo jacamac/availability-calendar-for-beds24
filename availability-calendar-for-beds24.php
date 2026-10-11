@@ -3,7 +3,7 @@
  * Plugin Name:       Availability Calendar for Beds24
  * Plugin URI:        https://github.com/jacamac/availability-calendar-for-beds24
  * Description:       Displays a Beds24 room or property availability calendar via the [avail_calendar] shortcode and an Elementor widget.
- * Version:           1.6.1
+ * Version:           1.7.0
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            Jacques Leisy
@@ -32,7 +32,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BAC_VERSION', '1.6.1' );
+define( 'BAC_VERSION', '1.7.0' );
 define( 'BAC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BAC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BAC_DEFAULT_MONTHS_DESKTOP', 3 );
@@ -99,9 +99,10 @@ unset( $bac_puc );
 	LANGUAGE DETECTION
 	Priority:
 	1. Explicit lang attribute/setting on the instance
-	2. TranslatePress active language (if plugin is active)
-	3. WordPress locale
-	4. Fallback: 'en'
+	2. TranslatePress $TRP_LANGUAGE global (current request language)
+	3. Legacy TranslatePress functions (absent in TranslatePress 3.x)
+	4. WordPress locale
+	5. Fallback: 'en'
 
 	TranslatePress stores languages in WordPress locale format
 	(e.g. 'fr_FR', 'de_DE') — we normalise to BCP-47 ('fr', 'de').
@@ -140,7 +141,15 @@ function bac_locale_to_bcp47( string $locale ): string {
  */
 function bac_detect_language(): string {
 
-	// TranslatePress — returns visitor's actively selected language (WP locale format).
+	// TranslatePress: current language of the request (WP locale format, e.g. de_DE).
+	// phpcs:disable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase -- third-party global.
+	global $TRP_LANGUAGE;
+	if ( ! empty( $TRP_LANGUAGE ) && is_string( $TRP_LANGUAGE ) ) {
+		return bac_locale_to_bcp47( $TRP_LANGUAGE );
+	}
+	// phpcs:enable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
+
+	// Legacy TranslatePress API — returns visitor's actively selected language (WP locale format).
 	if ( function_exists( 'trp_get_current_language' ) ) {
 		$trp_lang = trp_get_current_language();
 		if ( ! empty( $trp_lang ) ) {
@@ -148,7 +157,7 @@ function bac_detect_language(): string {
 		}
 	}
 
-	// Older TranslatePress API (< 2.x fallback).
+	// Older TranslatePress API.
 	if ( function_exists( 'trp_get_language' ) ) {
 		$trp_lang = trp_get_language();
 		if ( ! empty( $trp_lang ) ) {
@@ -195,6 +204,8 @@ function bac_resolve_lang( string $explicit = '' ): string {
 	}
 	return bac_detect_language();
 }
+
+require_once BAC_PLUGIN_DIR . 'includes/booking-links.php';
 
 /*
 ═══════════════════════════════════════════════════════════

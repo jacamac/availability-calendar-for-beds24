@@ -61,6 +61,18 @@ Note that the number of months can be selected independantly for desktop, tablet
 | `startyear`       | current              | Starting year (2020–2100)                           |
 | `lang`            | `en`                 | BCP-47 locale, e.g. `fr`, `de`, `es`, `it`, `nl`    |
 
+### Language detection
+
+When `lang` is omitted, the language is detected in this order: the `lang` attribute → TranslatePress's `$TRP_LANGUAGE` global (current request language) → legacy TranslatePress functions → WordPress locale → `en`.
+
+### Booking link rewriting
+
+Every Beds24 booking link (`beds24.com/booking*.php`) in the front-end page HTML — from any source, not just the calendar — gets its `lang` parameter set to the current page language (two-letter code), replacing an existing value or appending one. Admin, AJAX, REST/JSON, feeds and robots.txt are untouched. Disable with:
+
+```php
+add_filter( 'bac_rewrite_booking_links', '__return_false' );
+```
+
 The device tier is decided in the visitor's browser from the viewport width, and the calendar re-renders if the window is resized across a tier.
 
 ---

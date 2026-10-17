@@ -15,9 +15,9 @@ permissions:
 jobs:
   lint:
     name: PHP Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned; move to a newer image deliberately
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -25,7 +25,7 @@ jobs:
           tools: composer, cs2pr
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
@@ -43,7 +43,7 @@ jobs:
       - name: Audit dependencies for known CVEs
         run: composer audit
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: 'npm'
@@ -57,9 +57,9 @@ jobs:
   release:
     name: Build & Publish dev-latest
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned; move to a newer image deliberately
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -100,7 +100,7 @@ jobs:
           zip -r availability-calendar-for-beds24.zip availability-calendar-for-beds24/
 
       - name: Update dev-latest pre-release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: dev-latest
           name: "Development Build (latest)"

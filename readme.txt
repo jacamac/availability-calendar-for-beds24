@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.7.0
+Stable tag:         1.7.1
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,9 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.7.1 =
+* Fix: CI warnings — GitHub Actions moved to their Node 24 releases (checkout v7, cache v6, setup-node v7, softprops/action-gh-release v3.0.3 pinned by commit SHA); runners pinned to ubuntu-24.04 instead of ubuntu-latest (which moves to Ubuntu 26 from 19 Oct 2026). No change to the plugin code.
 
 = 1.7.0 =
 * Fix: language auto-detection now uses TranslatePress's $TRP_LANGUAGE global. trp_get_current_language()/trp_get_language() do not exist in TranslatePress 3.x, so the calendar always fell back to the site locale on translated pages

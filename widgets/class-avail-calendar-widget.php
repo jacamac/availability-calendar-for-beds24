@@ -114,6 +114,17 @@ class Avail_Calendar_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'beds24_booking',
+			array(
+				'label'        => esc_html__( 'Book on Beds24', 'availability-calendar-for-beds24' ),
+				'type'         => \Elementor\Controls_Manager::SWITCHER,
+				'return_value' => 'yes',
+				'default'      => '',
+				'description'  => esc_html__( 'Off (default): a day opens this site\'s /booking/ page with the date and room. On: Beds24\'s booking page.', 'availability-calendar-for-beds24' ),
+			)
+		);
+
 		$this->end_controls_section();
 
 		/* ── Section: Display ── */
@@ -691,6 +702,7 @@ class Avail_Calendar_Widget extends \Elementor\Widget_Base {
 			'startmonth'      => $s['startmonth'] ?? '',
 			'startyear'       => $s['startyear'] ?? '',
 			'lang'            => $s['lang'] ?? '',
+			'beds24_booking'  => $s['beds24_booking'] ?? '',
 			'scheme'          => $s['scheme'] ?? 'solid',
 			'scheme_shape'    => $s['scheme_shape'] ?? '',
 			'scheme_avail'    => $s['scheme_avail'] ?? '',

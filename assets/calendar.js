@@ -44,6 +44,7 @@ class AvailCalendar {
             startMonth:     null,
             startYear:      null,
             lang:           'en',
+            bookingUrl:     null,   // the site's /booking/ page in the page language (PHP); null = Beds24's page
             scheme:        'solid',
             schemeShape:   null,
             schemeAvail:   null,
@@ -256,8 +257,11 @@ class AvailCalendar {
             if (bookable) {
                 const a   = document.createElement('a');
                 a.href    = this._bookingURL(dateIso);
-                a.target  = '_blank';
-                a.rel     = 'noopener noreferrer';
+                if (!this.cfg.bookingUrl) {
+                    // Beds24's booking page: a new tab, as before 1.8.0. The site's own page opens in this tab.
+                    a.target  = '_blank';
+                    a.rel     = 'noopener noreferrer';
+                }
                 a.style.cssText = 'display:contents;text-decoration:none;color:inherit;';
                 a.appendChild(cell);
                 grid.appendChild(a);
@@ -446,6 +450,13 @@ class AvailCalendar {
 
     /* ─── Booking URL ─────────────────────────────────────── */
     _bookingURL(dateIso) {
+        if (this.cfg.bookingUrl) {
+            // 1.8.0: the site's booking page (/booking/, /en/booking/…) with the arrival and the room.
+            const url = new URL(this.cfg.bookingUrl, window.location.href);
+            url.searchParams.set('arrivee', dateIso);
+            if (this.cfg.roomid) url.searchParams.set('room_id', this.cfg.roomid);
+            return url.toString();
+        }
         const p = new URLSearchParams({
             checkin: dateIso,
             referer: 'BookingCalendar',

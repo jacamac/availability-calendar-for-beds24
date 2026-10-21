@@ -10,7 +10,7 @@ No jQuery. No build step. No external dependencies beyond the Beds24 availabilit
 
 - **Colour-coded tiles** — green (available), red (unavailable), diagonal split for arrival/departure transition days
 - **Locale-aware** — month names, weekday labels, and first day of week adapt automatically to any BCP-47 language tag via the browser's built-in `Intl` API
-- **Click-to-book** — available dates link directly to `beds24.com/booking.php` with the correct date, room, and language
+- **Click-to-book** — an available date opens the site's `/booking/` page in the page's language (`/en/booking/` with TranslatePress) with `?arrivee=<date>&room_id=<roomid>`, in the same tab; `beds24_booking="true"` links to `beds24.com/booking.php` with the date, room and language instead (new tab, as before 1.8.0)
 - **SessionStorage cache** — 5-minute TTL per room/property, avoids repeated API calls during navigation
 - **Dark mode** — respects `prefers-color-scheme`
 - **Multiple instances** — each shortcode creates an independent `AvailCalendar` class instance; safe to use several times on the same page
@@ -60,6 +60,7 @@ Note that the number of months can be selected independantly for desktop, tablet
 | `startmonth`      | current              | Starting month (1–12)                               |
 | `startyear`       | current              | Starting year (2020–2100)                           |
 | `lang`            | `en`                 | BCP-47 locale, e.g. `fr`, `de`, `es`, `it`, `nl`    |
+| `beds24_booking`  | `false`              | `true` = days link to the Beds24 booking page       |
 
 ### Language detection
 

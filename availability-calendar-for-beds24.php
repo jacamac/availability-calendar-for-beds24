@@ -3,7 +3,7 @@
  * Plugin Name:       Availability Calendar for Beds24
  * Plugin URI:        https://github.com/jacamac/availability-calendar-for-beds24
  * Description:       Displays a Beds24 room or property availability calendar via the [avail_calendar] shortcode and an Elementor widget.
- * Version:           1.7.1
+ * Version:           1.8.0
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            Jacques Leisy
@@ -32,7 +32,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BAC_VERSION', '1.7.1' );
+define( 'BAC_VERSION', '1.8.0' );
 define( 'BAC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BAC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BAC_DEFAULT_MONTHS_DESKTOP', 3 );
@@ -330,6 +330,14 @@ function bac_sanitize_config( array $raw ): array {
 
 	$config['lang'] = bac_resolve_lang( $raw['lang'] ?? '' );
 
+	// Where a bookable day leads (1.8.0): the site's booking page /booking/ by default, in the page's language —
+	// TranslatePress adds its language prefix to home_url() (/en/booking/) — with ?arrivee=<date>&room_id=<roomid>;
+	// beds24_booking="true": Beds24's booking page, as before 1.8.0.
+	$config['beds24Booking'] = in_array( strtolower( trim( (string) ( $raw['beds24_booking'] ?? '' ) ) ), array( '1', 'true', 'yes', 'on' ), true );
+	if ( ! $config['beds24Booking'] ) {
+		$config['bookingUrl'] = esc_url_raw( home_url( '/booking/' ) );
+	}
+
 	$allowed_schemes  = array( 'solid', 'minimal', 'outline', 'soft', 'dot', 'custom' );
 	$scheme           = sanitize_key( $raw['scheme'] ?? 'solid' );
 	$config['scheme'] = in_array( $scheme, $allowed_schemes, true ) ? $scheme : 'solid';
@@ -389,6 +397,7 @@ function bac_sanitize_config( array $raw ): array {
 	startmonth      — starting month 1-12 (default: current month)
 	startyear       — starting year (default: current year)
 	lang            — BCP-47 locale override, e.g. 'fr'
+	beds24_booking  — 'true' = days link to Beds24's booking page; default: the site's /booking/ page
 					Omit to use TranslatePress / WP locale automatically
 
 	Examples:
@@ -416,6 +425,7 @@ function bac_shortcode( $atts ): string {
 			'startmonth'      => '',
 			'startyear'       => '',
 			'lang'            => '',   // empty = auto-detect.
+			'beds24_booking'  => 'false', // 'true' = days link to Beds24's booking page (before 1.8.0: always).
 			'scheme'          => 'solid',
 			'scheme_shape'    => '',
 			'scheme_avail'    => '',
@@ -457,6 +467,7 @@ function bac_footer_init(): void {
 	 * $bac_instances is built entirely from bac_sanitize_config() output:
 	 *   - roomid/propid/nummonths/startmonth/startyear are cast via absint()
 	 *   - lang is validated against a strict BCP-47 regex
+	 *   - beds24Booking is a boolean; bookingUrl is home_url( '/booking/' ) through esc_url_raw()
 	 * wp_json_encode() then serialises the array to safe JSON with all
 	 * special characters escaped. The result cannot contain executable code.
 	 */

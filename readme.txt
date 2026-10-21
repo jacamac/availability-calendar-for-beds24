@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.7.1
+Stable tag:         1.8.0
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,7 +18,7 @@ Features:
 * Displays availability for a specific room (`roomid`) or whole property (`propid`)
 * Colour-coded tiles: green (available), red (unavailable), diagonal split for arrival/departure days
 * Locale-aware: month names, weekday labels, and first day of week adapt automatically to any BCP-47 language tag via the browser's built-in Intl API
-* Click-to-book: available dates link directly to the Beds24 booking page
+* Click-to-book: an available date opens the site's /booking/ page (in the page's language) with the date and room, or the Beds24 booking page with beds24_booking="true"
 * SessionStorage cache with 5-minute TTL — avoids repeated API calls on navigation
 * Dark mode support via `prefers-color-scheme`
 * Multiple instances on the same page are fully supported
@@ -53,6 +53,7 @@ Show 3 months on desktop, 2 on tablet and 1 on mobile:
 | startmonth      | current           | Starting month (1–12)                            |
 | startyear       | current           | Starting year (2020–2100)                        |
 | lang            | en                | BCP-47 locale tag, e.g. fr, de, es, it, nl       |
+| beds24_booking  | false             | true = days link to the Beds24 booking page      |
 
 The device tier is decided in the visitor's browser from the viewport width, and the calendar re-renders if the window is resized across a tier.
 
@@ -67,6 +68,10 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.8.0 =
+* New: an available day opens the site's own booking page by default: home_url( '/booking/' ) with ?arrivee=<date>&room_id=<roomid> (room_id only for a room calendar), in the same tab. The page language comes from WordPress: TranslatePress adds its language prefix to home_url() (/en/booking/), so no language logic is added here.
+* New: shortcode attribute beds24_booking="true" (Elementor: « Book on Beds24 ») keeps the Beds24 booking page link (checkin, roomid, propid, lang; new tab) — the only behaviour before 1.8.0. Default false.
 
 = 1.7.1 =
 * Fix: CI warnings — GitHub Actions moved to their Node 24 releases (checkout v7, cache v6, setup-node v7, softprops/action-gh-release v3.0.3 pinned by commit SHA); runners pinned to ubuntu-24.04 instead of ubuntu-latest (which moves to Ubuntu 26 from 19 Oct 2026). No change to the plugin code.
@@ -155,6 +160,9 @@ The device tier is decided in the visitor's browser from the viewport width, and
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Available days now open the site's /booking/ page (?arrivee=…&room_id=…) instead of Beds24's booking page. Add beds24_booking="true" to a calendar (Elementor: « Book on Beds24 ») to keep the Beds24 link.
 
 = 1.3.0 =
 Plugin renamed to "Availability Calendar for Beds24". After updating, you will need to reactivate the plugin manually — the plugin file has been renamed.

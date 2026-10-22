@@ -54,6 +54,9 @@ jobs:
       - name: JS & CSS lint
         run: npm run lint
 
+      - name: JS tests
+        run: npm test
+
   release:
     name: Build & Publish dev-latest
     needs: lint
@@ -84,6 +87,7 @@ jobs:
             --exclude='package.json' \
             --exclude='package-lock.json' \
             --exclude='node_modules' \
+            --exclude='tests' \
             --exclude='phpcs.xml' \
             --exclude='phpstan.neon' \
             --exclude='vendor' \

@@ -22,6 +22,14 @@ export default [
         },
     },
     {
+        files: ['tests/**/*.js'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            globals: globals.node,
+        },
+    },
+    {
         files: ['assets/elementor-preview.js'],
         languageOptions: {
             ecmaVersion: 5,

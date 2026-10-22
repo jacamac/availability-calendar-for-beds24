@@ -10,6 +10,7 @@ No jQuery. No build step. No external dependencies beyond the Beds24 availabilit
 
 - **Colour-coded tiles** — green (available), red (unavailable), diagonal split for arrival/departure transition days
 - **Locale-aware** — month names, weekday labels, and first day of week adapt automatically to any BCP-47 language tag via the browser's built-in `Intl` API
+- **Opens on the first possible arrival** — the first month shown is the month of the first day a guest can arrive (see [Starting month](#starting-month))
 - **Click-to-book** — an available date opens the site's `/booking/` page in the page's language (`/en/booking/` with TranslatePress) with `?arrivee=<date>&room_id=<roomid>`, in the same tab; `beds24_booking="true"` links to `beds24.com/booking.php` with the date, room and language instead (new tab, as before 1.8.0)
 - **SessionStorage cache** — 5-minute TTL per room/property, avoids repeated API calls during navigation
 - **Dark mode** — respects `prefers-color-scheme`
@@ -57,10 +58,33 @@ Note that the number of months can be selected independantly for desktop, tablet
 | `nummonths`       | `5`                  | Months shown on desktop (1–12)                      |
 | `nummonthstablet` | same as `nummonths`  | Months shown on tablet, 768–1024 px (1–12)          |
 | `nummonthsmobile` | same as `nummonths`  | Months shown on mobile, < 768 px (1–12)             |
-| `startmonth`      | current              | Starting month (1–12)                               |
-| `startyear`       | current              | Starting year (2020–2100)                           |
+| `startmonth`      | see `startfrom`      | Starting month (1–12)                               |
+| `startyear`       | see `startfrom`      | Starting year (2020–2100)                           |
+| `startfrom`       | `available`          | `available` = month of the first possible arrival; `current` = current month (before 1.9.0). Ignored when `startmonth` or `startyear` is set |
 | `lang`            | `en`                 | BCP-47 locale, e.g. `fr`, `de`, `es`, `it`, `nl`    |
 | `beds24_booking`  | `false`              | `true` = days link to the Beds24 booking page       |
+
+### Starting month
+
+With `startfrom="available"` (the default), the calendar opens on the month containing the **first day on which an arrival is possible**, from today onwards. With several months displayed, that month is the first of the set.
+
+- "Arrival possible" is what the calendar links to booking: a fully available day, or a split day free from the afternoon (see [Tile Logic](#tile-logic)).
+- If the current month has a possible arrival, the calendar opens on the current month.
+- If the loaded data has no possible arrival at all, it opens on the current month, with no message.
+- ‹ goes back as far as the current month and stops there (the button is disabled), so a guest can see that the earlier months are closed.
+- Availability is exactly what Beds24 returns; this only chooses the first month shown.
+
+**Computed in the browser.** The month is chosen in `calendar.js` from the availability the calendar already loads (Beds24 returns every day from yesterday to one year ahead, about 5 KB per room), with no extra request. It is not computed in PHP because cached page HTML (Cloudflare, page caches) would freeze it while bookings change. Until the data has arrived, the months are hidden but keep their space, so the current month never flashes before the switch.
+
+`startfrom="current"` keeps the behaviour from before 1.9.0: it opens on the current month, and ‹ is not limited. An explicit `startmonth`/`startyear` always opens on that fixed month. Elementor widget: **Display → Open On**.
+
+### Hint line
+
+Under the months the calendar shows « Click an arrival date to book », because the tiles' `title` tooltip (kept for mouse users) never shows on a touch screen. Every bookable day is a link, so the line is always shown.
+
+It is static markup printed by PHP through gettext (`availability-calendar-for-beds24` text domain), not a string inserted by JS, so TranslatePress can translate it like the rest of the page. The plugin ships `languages/availability-calendar-for-beds24.pot` and a French translation (`fr_FR`: « Cliquez sur une date d'arrivée pour réserver »); other languages can be translated in TranslatePress (gettext strings) or with a `.po`/`.mo` file.
+
+Styling: class `.bac-hint`, with the custom properties `--bac-hint-size` (default `13px`), `--bac-hint-color` (default `--cal-text`) and `--bac-hint-align` (default `center`).
 
 ### Language detection
 
@@ -86,6 +110,8 @@ availability-calendar-for-beds24/
 ├── assets/
 │   ├── calendar.css                       ← Scoped styles (.bac-wrapper)
 │   └── calendar.js                        ← AvailCalendar class
+├── languages/                             ← .pot template and fr_FR translation
+├── tests/                                 ← node:test tests (npm test), not shipped
 └── readme.txt                             ← WordPress plugin readme
 ```
 
@@ -93,7 +119,7 @@ availability-calendar-for-beds24/
 
 1. Each `[avail_calendar]` shortcode renders a `<div id="bac-{unique}">` container and registers its config.
 2. A single `<script>` block at `wp_footer` instantiates all `AvailCalendar` instances collected during page render.
-3. Each instance fetches availability from `media.xmlcal.com`, caches it in `sessionStorage`, and renders the calendar into its own container.
+3. Each instance fetches availability from `media.xmlcal.com`, caches it in `sessionStorage`, picks the starting month from that data (`startFrom`), and renders the calendar into its own container.
 4. CSS and JS are each enqueued once per page regardless of how many shortcodes appear.
 
 ### JavaScript class
@@ -110,6 +136,7 @@ The `AvailCalendar` class can also be used outside WordPress:
     containerId: 'my-calendar',
     roomid:      12345,
     numMonths:   5,
+    startFrom:   'available',   // or 'current'
     lang:        'fr',
   });
 </script>

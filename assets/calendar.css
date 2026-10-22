@@ -79,6 +79,16 @@
     background: var(--cal-nav-hover);
 }
 
+/* ‹ at the current month, when the calendar opens on the first possible arrival */
+.bac-nav button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.bac-nav button:disabled:hover {
+    background: none;
+}
+
 .bac-status {
     font-size: 12px;
     color: var(--cal-dow);
@@ -95,6 +105,20 @@
 
 .bac-strip::-webkit-scrollbar {
     display: none;
+}
+
+/* ── Hint line under the months (PHP markup, translatable) ── */
+.bac-hint {
+    font-size: var(--bac-hint-size, 13px);
+    color: var(--bac-hint-color, var(--cal-text));
+    text-align: var(--bac-hint-align, center);
+    margin-top: 12px;
+}
+
+/* Starting month not known yet (data loading): months keep their space, hidden */
+.bac-wrapper.bac-is-loading .bac-strip,
+.bac-wrapper.bac-is-loading .bac-hint {
+    visibility: hidden;
 }
 
 /* ── Single month ── */

@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.8.0
+Stable tag:         1.9.0
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,7 @@ Features:
 * Displays availability for a specific room (`roomid`) or whole property (`propid`)
 * Colour-coded tiles: green (available), red (unavailable), diagonal split for arrival/departure days
 * Locale-aware: month names, weekday labels, and first day of week adapt automatically to any BCP-47 language tag via the browser's built-in Intl API
+* Opens on the month of the first possible arrival (startfrom="available", default), decided in the browser from the loaded data
 * Click-to-book: an available date opens the site's /booking/ page (in the page's language) with the date and room, or the Beds24 booking page with beds24_booking="true"
 * SessionStorage cache with 5-minute TTL — avoids repeated API calls on navigation
 * Dark mode support via `prefers-color-scheme`
@@ -50,8 +51,9 @@ Show 3 months on desktop, 2 on tablet and 1 on mobile:
 | nummonths       | 5                 | Months shown on desktop (1–12)                   |
 | nummonthstablet | same as nummonths | Months shown on tablet, 768–1024 px (1–12)       |
 | nummonthsmobile | same as nummonths | Months shown on mobile, < 768 px (1–12)          |
-| startmonth      | current           | Starting month (1–12)                            |
-| startyear       | current           | Starting year (2020–2100)                        |
+| startmonth      | see startfrom     | Starting month (1–12)                            |
+| startyear       | see startfrom     | Starting year (2020–2100)                        |
+| startfrom       | available         | available = month of the first possible arrival; current = current month. Ignored when startmonth or startyear is set |
 | lang            | en                | BCP-47 locale tag, e.g. fr, de, es, it, nl       |
 | beds24_booking  | false             | true = days link to the Beds24 booking page      |
 
@@ -68,6 +70,14 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.9.0 =
+* New: the calendar opens on the month of the first possible arrival (a day the calendar links to booking: available, or free from the afternoon), from today onwards; with several months shown, that month comes first. If the current month has one, or the loaded data has none, it opens on the current month as before. ‹ goes back to the current month and stops there. Availability is unchanged: this only chooses the first month shown.
+* The starting month is computed in the browser from the availability already loaded (Beds24 returns one year ahead), with no extra request: a value computed in PHP would be frozen in cached page HTML. Until the data arrives the months stay hidden (space kept), so the current month never flashes first.
+* New: shortcode attribute startfrom — "available" (default) or "current" (the behaviour before 1.9.0, ‹ not limited). An explicit startmonth/startyear still opens on that month. Elementor: Display → « Open On »; the Start Month option "Current month" is now "Not set (see Open On)".
+* New: a hint line under the months, « Click an arrival date to book », for touch screens where the tooltip never shows. Printed by PHP through gettext so TranslatePress can translate it; class .bac-hint, custom properties --bac-hint-size, --bac-hint-color, --bac-hint-align.
+* New: languages/ with the .pot template and a fr_FR translation (« Cliquez sur une date d'arrivée pour réserver », « Calendrier de disponibilité »); the text domain is now loaded from the plugin.
+* Dev: tests for the first-arrival computation (npm test, node:test), run in CI; tests/ is not shipped.
 
 = 1.8.0 =
 * New: an available day opens the site's own booking page by default: home_url( '/booking/' ) with ?arrivee=<date>&room_id=<roomid> (room_id only for a room calendar), in the same tab. The page language comes from WordPress: TranslatePress adds its language prefix to home_url() (/en/booking/), so no language logic is added here.

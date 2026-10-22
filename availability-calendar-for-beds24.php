@@ -3,7 +3,7 @@
  * Plugin Name:       Availability Calendar for Beds24
  * Plugin URI:        https://github.com/jacamac/availability-calendar-for-beds24
  * Description:       Displays a Beds24 room or property availability calendar via the [avail_calendar] shortcode and an Elementor widget.
- * Version:           1.8.0
+ * Version:           1.9.0
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            Jacques Leisy
@@ -11,6 +11,7 @@
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       availability-calendar-for-beds24
+ * Domain Path:       /languages
  * GitHub Plugin URI: jacamac/availability-calendar-for-beds24
  * Primary Branch:    main
  *
@@ -32,7 +33,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BAC_VERSION', '1.8.0' );
+define( 'BAC_VERSION', '1.9.0' );
 define( 'BAC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BAC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BAC_DEFAULT_MONTHS_DESKTOP', 3 );
@@ -207,6 +208,16 @@ function bac_resolve_lang( string $explicit = '' ): string {
 
 require_once BAC_PLUGIN_DIR . 'includes/booking-links.php';
 
+add_action( 'init', 'bac_load_textdomain' );
+
+/**
+ * Load the plugin's translations from languages/ (fr_FR ships with the plugin).
+ * Strings can still be overridden per language in TranslatePress.
+ */
+function bac_load_textdomain(): void {
+	load_plugin_textdomain( 'availability-calendar-for-beds24', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
+
 /*
 ═══════════════════════════════════════════════════════════
 	ASSET REGISTRATION & ENQUEUING
@@ -272,11 +283,15 @@ function bac_register_instance( array $config, array $extra_attrs = array() ): s
 		$attrs_html .= sprintf( ' %s="%s"', esc_attr( $attr_name ), esc_attr( $attr_value ) );
 	}
 
+	// 1.9.0: a visible hint, for touch screens where the tiles' title tooltip never shows. Static markup
+	// (gettext) rather than JS text, so TranslatePress can translate it; calendar.js moves it below the months.
+	// Every bookable day is a link (site or Beds24 booking page), so the hint is always shown.
 	return sprintf(
-		'<div id="%s" class="bac-wrapper"%s aria-label="%s"></div>',
+		'<div id="%s" class="bac-wrapper"%s aria-label="%s"><p class="bac-hint">%s</p></div>',
 		esc_attr( $instance_id ),
 		$attrs_html,
-		esc_attr__( 'Availability calendar', 'availability-calendar-for-beds24' )
+		esc_attr__( 'Availability calendar', 'availability-calendar-for-beds24' ),
+		esc_html__( 'Click an arrival date to book', 'availability-calendar-for-beds24' )
 	);
 }
 
@@ -292,7 +307,7 @@ function bac_register_instance( array $config, array $extra_attrs = array() ): s
  * Sanitise raw attribute values into a clean config array.
  *
  * @param array<string, mixed> $raw  Associative array with keys:
- *                                   roomid, propid, nummonths, startmonth, startyear, lang.
+ *                                   roomid, propid, nummonths, startmonth, startyear, startfrom, lang.
  * @return array<string, mixed> Clean config array for AvailCalendar JS class.
  */
 function bac_sanitize_config( array $raw ): array {
@@ -327,6 +342,11 @@ function bac_sanitize_config( array $raw ): array {
 	if ( $startyear >= 2020 && $startyear <= 2100 ) {
 		$config['startYear'] = $startyear;
 	}
+
+	// Which month the calendar opens on (1.9.0), decided in the browser from the loaded availability
+	// (the page HTML may be cached): 'available' (default) = month of the first possible arrival,
+	// 'current' = current month, as before 1.9.0. An explicit startmonth/startyear takes precedence.
+	$config['startFrom'] = 'current' === sanitize_key( $raw['startfrom'] ?? '' ) ? 'current' : 'available';
 
 	$config['lang'] = bac_resolve_lang( $raw['lang'] ?? '' );
 
@@ -394,11 +414,13 @@ function bac_sanitize_config( array $raw ): array {
 	nummonths       — months on desktop (1-12, default 5)
 	nummonthstablet — months on tablet, 768-1024 px (1-12, default: nummonths)
 	nummonthsmobile — months on mobile, < 768 px (1-12, default: nummonths)
-	startmonth      — starting month 1-12 (default: current month)
-	startyear       — starting year (default: current year)
+	startmonth      — starting month 1-12 (default: see startfrom)
+	startyear       — starting year (default: see startfrom)
+	startfrom       — 'available' (default) = month of the first possible arrival;
+					'current' = current month. Ignored when startmonth or startyear is set
 	lang            — BCP-47 locale override, e.g. 'fr'
-	beds24_booking  — 'true' = days link to Beds24's booking page; default: the site's /booking/ page
 					Omit to use TranslatePress / WP locale automatically
+	beds24_booking  — 'true' = days link to Beds24's booking page; default: the site's /booking/ page
 
 	Examples:
 	[avail_calendar roomid="12345" nummonths="5"]
@@ -424,6 +446,7 @@ function bac_shortcode( $atts ): string {
 			'nummonthsmobile' => '',   // empty = same as nummonths.
 			'startmonth'      => '',
 			'startyear'       => '',
+			'startfrom'       => 'available', // 'current' = open on the current month (before 1.9.0: always).
 			'lang'            => '',   // empty = auto-detect.
 			'beds24_booking'  => 'false', // 'true' = days link to Beds24's booking page (before 1.8.0: always).
 			'scheme'          => 'solid',
@@ -467,6 +490,7 @@ function bac_footer_init(): void {
 	 * $bac_instances is built entirely from bac_sanitize_config() output:
 	 *   - roomid/propid/nummonths/startmonth/startyear are cast via absint()
 	 *   - lang is validated against a strict BCP-47 regex
+	 *   - startFrom is one of two literals
 	 *   - beds24Booking is a boolean; bookingUrl is home_url( '/booking/' ) through esc_url_raw()
 	 * wp_json_encode() then serialises the array to safe JSON with all
 	 * special characters escaped. The result cannot contain executable code.

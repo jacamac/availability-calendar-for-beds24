@@ -54,6 +54,7 @@ jobs:
             --exclude='package.json' \
             --exclude='package-lock.json' \
             --exclude='node_modules' \
+            --exclude='tests' \
             --exclude='phpcs.xml' \
             --exclude='phpstan.neon' \
             --exclude='vendor' \

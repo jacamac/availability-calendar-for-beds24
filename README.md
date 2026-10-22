@@ -111,6 +111,12 @@ Styling: class `.bac-hint`, with the custom properties `--bac-hint-size` (defaul
 
 When `lang` is omitted, the language is detected in this order: the `lang` attribute → TranslatePress's `$TRP_LANGUAGE` global (current request language) → legacy TranslatePress functions → WordPress locale → `en`.
 
+Month names, weekday labels and the first day of the week use the full locale, region included (1.10.1): TranslatePress's `en_GB` gives `en-GB`, so English weeks start on Monday, like French, German, Spanish and Italian (`en-US` would start on Sunday). The first day comes from the browser's `Intl` week data; browsers without it (Firefox) use the region (Sunday for US, CA, MX, BR, JP, KR, TW, HK, IL, IN, PH; Monday otherwise). An explicit `lang` attribute is used as given (`lang="en"` = en-US, Sunday). The Beds24 booking link keeps the two-letter language.
+
+### TranslatePress
+
+The calendar renders its months already in the page language, so TranslatePress's browser-side ("dynamic") translation must not look them up again as French (before 1.10.1: « Kill » for Tue in English, « Es ist / Also » for Sa / So in German, « Mare » for Mer in Italian). The wrapper and every element `calendar.js` creates carry `data-no-dynamic-translation` (TranslatePress tests `closest()` when its observer runs, and a node removed by a re-render is detached by then, so the wrapper alone is not enough). `data-no-translation` is not used: the months never exist in the server HTML, and on the wrapper it would also stop the server-side translation of the hint and the `aria-label`, which come from gettext.
+
 ### Booking link rewriting
 
 Every Beds24 booking link (`beds24.com/booking*.php`) in the front-end page HTML — from any source, not just the calendar — gets its `lang` parameter set to the current page language (two-letter code), replacing an existing value or appending one. Admin, AJAX, REST/JSON, feeds and robots.txt are untouched. Disable with:

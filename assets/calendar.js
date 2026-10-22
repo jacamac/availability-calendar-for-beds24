@@ -46,6 +46,7 @@ class AvailCalendar {
             startYear:      null,
             startFrom:      'available',
             lang:           'en',
+            locale:         null,   // 1.10.1: Intl locale with region (en-GB) from PHP; null = lang
             bookingUrl:     null,   // the site's /booking/ page in the page language (PHP); null = Beds24's page
             scheme:        'solid',
             schemeShape:   null,
@@ -123,22 +124,25 @@ class AvailCalendar {
         // The hint line is rendered by PHP (gettext, translatable by TranslatePress): keep it, below the months
         const hint = this.container.querySelector('.bac-hint');
         this.container.innerHTML = '';
+        // Also printed by PHP (1.10.1); set here for wrappers from other templates. Server-side translation of the
+        // hint and the aria-label is unaffected: this attribute only stops the browser-side lookup.
+        this.container.setAttribute('data-no-dynamic-translation', '');
 
         // Navigation bar
-        const nav = document.createElement('div');
+        const nav = this._el('div');
         nav.className = 'bac-nav';
 
-        this._btnPrev = document.createElement('button');
+        this._btnPrev = this._el('button');
         this._btnPrev.setAttribute('aria-label', 'Previous');
         this._btnPrev.innerHTML = '&#8249;';
         this._btnPrev.addEventListener('click', () => this._shift(-1));
 
-        this._btnNext = document.createElement('button');
+        this._btnNext = this._el('button');
         this._btnNext.setAttribute('aria-label', 'Next');
         this._btnNext.innerHTML = '&#8250;';
         this._btnNext.addEventListener('click', () => this._shift(+1));
 
-        this._statusEl = document.createElement('span');
+        this._statusEl = this._el('span');
         this._statusEl.className = 'bac-status';
 
         nav.appendChild(this._btnPrev);
@@ -147,7 +151,7 @@ class AvailCalendar {
         this.container.appendChild(nav);
 
         // Month strip
-        this._strip = document.createElement('div');
+        this._strip = this._el('div');
         this._strip.className = 'bac-strip';
         this.container.appendChild(this._strip);
         if (hint) this.container.appendChild(hint);
@@ -170,6 +174,17 @@ class AvailCalendar {
         });
 
         this._applyScheme();
+    }
+
+    /* Every element the calendar creates (1.10.1). Its text is already in the page language (Intl, _t()):
+       TranslatePress's dynamic translation would look it up again as French ("Tue" → "Kill"). TranslatePress tests
+       closest('[data-no-dynamic-translation]') when its observer runs, and a node removed by a re-render is
+       detached by then, so marking the wrapper alone is not enough. */
+    _el(tag, className) {
+        const el = document.createElement(tag);
+        el.setAttribute('data-no-dynamic-translation', '');
+        if (className) el.className = className;
+        return el;
     }
 
     /* ─── Scheme resolution ───────────────────────────────── */
@@ -241,21 +256,21 @@ class AvailCalendar {
         const fdow   = this._firstDayOfWeek();
         const offset = (first.getDay() - fdow + 7) % 7;
 
-        const wrap = document.createElement('div');
+        const wrap = this._el('div');
         wrap.className = 'bac-month';
 
         // Title
         const mn    = this._monthName(year, m1 - 1);
-        const title = document.createElement('div');
+        const title = this._el('div');
         title.className   = 'bac-month-title';
         title.textContent = mn.charAt(0).toUpperCase() + mn.slice(1) + ' ' + year;
         wrap.appendChild(title);
 
         // DOW header
-        const dowRow = document.createElement('div');
+        const dowRow = this._el('div');
         dowRow.className = 'bac-dow-row';
         this._dowLabels().forEach(label => {
-            const c = document.createElement('div');
+            const c = this._el('div');
             c.className   = 'bac-dow-cell';
             c.textContent = label;
             dowRow.appendChild(c);
@@ -263,12 +278,12 @@ class AvailCalendar {
         wrap.appendChild(dowRow);
 
         // Day grid
-        const grid = document.createElement('div');
+        const grid = this._el('div');
         grid.className = 'bac-grid';
 
         // Leading blank cells
         for (let i = 0; i < offset; i++) {
-            const e = document.createElement('div');
+            const e = this._el('div');
             e.className = 'bac-day bac-empty';
             grid.appendChild(e);
         }
@@ -282,7 +297,7 @@ class AvailCalendar {
             const isToday = dateIso === todayIso;
             const bookable = this._isBookable(cls);
 
-            const cell = document.createElement('div');
+            const cell = this._el('div');
             cell.className = 'bac-day ' + cls + (isToday ? ' bac-today' : '');
             cell.title     = cls === 'bac-past' || cls === 'bac-pending'
                 ? dateIso
@@ -290,12 +305,12 @@ class AvailCalendar {
                     ? this._t('book')
                     : this._t('unavailable');
 
-            const span = document.createElement('span');
+            const span = this._el('span');
             span.textContent = d;
             cell.appendChild(span);
 
             if (bookable) {
-                const a   = document.createElement('a');
+                const a   = this._el('a');
                 a.href    = this._bookingURL(dateIso);
                 a.dataset.arrival = dateIso;
                 if (!this.cfg.bookingUrl) {
@@ -487,20 +502,33 @@ class AvailCalendar {
 
     /* ─── Locale helpers ──────────────────────────────────── */
 
+    /* Locale for Intl (1.10.1): with its region (en-GB), which decides the first day of the week; lang drops it */
+    _locale() {
+        return this.cfg.locale || this.cfg.lang;
+    }
+
     /* First day of week for the locale: 0=Sun, 1=Mon */
     _firstDayOfWeek() {
+        const locale = this._locale();
         try {
-            const info = new Intl.Locale(this.cfg.lang).getWeekInfo?.() ??
-                         new Intl.Locale(this.cfg.lang).weekInfo;
+            const info = new Intl.Locale(locale).getWeekInfo?.() ??
+                         new Intl.Locale(locale).weekInfo;
             if (info && info.firstDay !== undefined) return info.firstDay % 7;
         } catch(_) {}
+        // No week data (Firefox): the region decides when there is one (en-GB → Monday, en-US → Sunday)
+        const parts  = locale.split('-');
+        const region = parts.slice(1).find(p => /^[A-Za-z]{2}$/.test(p));
+        if (region) {
+            const sunRegions = ['US','CA','MX','BR','JP','KR','TW','HK','IL','IN','PH'];
+            return sunRegions.includes(region.toUpperCase()) ? 0 : 1;
+        }
         const sunLocales = ['en','zh','ja','ko','ar','he','fa','hi'];
-        return sunLocales.includes(this.cfg.lang.split('-')[0]) ? 0 : 1;
+        return sunLocales.includes(parts[0]) ? 0 : 1;
     }
 
     /* 7 short weekday labels starting on locale's first day */
     _dowLabels() {
-        const fmt   = new Intl.DateTimeFormat(this.cfg.lang, { weekday: 'short' });
+        const fmt   = new Intl.DateTimeFormat(this._locale(), { weekday: 'short' });
         const start = this._firstDayOfWeek();
         // Anchor: Mon 1 Jan 2024 (index 0) or Sun 7 Jan 2024 (index 0 for Sunday-first)
         return Array.from({ length: 7 }, (_, i) => {
@@ -512,7 +540,7 @@ class AvailCalendar {
 
     /* Full month name */
     _monthName(year, month0) {
-        return new Intl.DateTimeFormat(this.cfg.lang, { month: 'long' })
+        return new Intl.DateTimeFormat(this._locale(), { month: 'long' })
             .format(new Date(year, month0, 1));
     }
 

@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.10.0
+Stable tag:         1.10.1
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,6 +70,10 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.10.1 =
+* Fix: TranslatePress's dynamic translation no longer re-translates the calendar as French on translated pages (weekday row « Sun Mon Kill Wed… » in English, « Mo Di Mi Do Fr Es ist Also » in German, « Lun Mar Mare… » in Italian). The wrapper (printed by PHP and set by calendar.js) and every element calendar.js creates carry data-no-dynamic-translation; no trp-ajax.php call from the calendar any more. The hint and the aria-label still go through gettext and TranslatePress's server-side translation.
+* Fix: the first day of the week follows the full locale: en_GB starts on Monday (it started on Sunday because the region was dropped). New config value locale (BCP-47 with region, e.g. en-GB) used for Intl; lang (two letters) is unchanged for the Beds24 link and the tooltips. Without Intl week data (Firefox) the region decides.
 
 = 1.10.0 =
 * Fix: no day shows as available, or is clickable, before the Beds24 data has arrived, in both startfrom modes: availability comes only from Beds24. Until then days from today are drawn like past days (class bac-pending). Before 1.10.0 every day briefly showed as available.

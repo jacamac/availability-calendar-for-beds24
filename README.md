@@ -76,6 +76,27 @@ With `startfrom="available"` (the default), the calendar opens on the month cont
 
 **Computed in the browser.** The month is chosen in `calendar.js` from the availability the calendar already loads (Beds24 returns every day from yesterday to one year ahead, about 5 KB per room), with no extra request. It is not computed in PHP because cached page HTML (Cloudflare, page caches) would freeze it while bookings change. Until the data has arrived, the months are hidden but keep their space, so the current month never flashes before the switch.
 
+**Never hidden for good (1.10.0).** If the availability call fails (network error, HTTP error, a response that is not a JSON object), the calendar is shown at once on the current month, as with `startfrom="current"`. If Beds24 has not answered after **5 seconds**, it is shown on the current month too; when the data arrives later the days fill in, but the months do not move under the guest. Beds24 normally answers in well under a second (about 0.2–0.5 s measured on 22 Oct 2026), so 5 s only catches a call that is really stuck, while staying short enough that the empty space doesn't look broken.
+
+### Before the data arrives
+
+Availability comes only from Beds24. Until the data has arrived, in both modes, every day from today onwards is drawn like a past day (muted number, no colour), has no booking link and is not clickable (class `bac-pending`). If the call fails, the days stay that way; the 5-minute refresh tries again. The error message is in `.bac-status`, which the `split` navigation (all presets) hides.
+
+### Booking event
+
+When a guest clicks a bookable day, the calendar dispatches a DOM event on its wrapper (`.bac-wrapper`, the shortcode's `<div id="bac-…">`) **synchronously, inside the click, before the browser follows the link**:
+
+```js
+document.addEventListener('bac:book', (e) => {
+  e.detail.arrival; // 'YYYY-MM-DD' — the day clicked
+  e.detail.roomId;  // Beds24 room id (number) of the calendar; null for a propid calendar
+});
+```
+
+- `CustomEvent` named `bac:book`, `bubbles: true`, not cancelable: the link opens whether anyone listens or not, and nothing changes when nobody does.
+- Keep listeners synchronous and quick: when the site's booking page opens in the same tab, the page unloads right after. For analytics, use a transport that survives the unload (Matomo and GA queue with `sendBeacon`).
+- The plugin itself sends nothing to any analytics tool.
+
 `startfrom="current"` keeps the behaviour from before 1.9.0: it opens on the current month, and ‹ is not limited. An explicit `startmonth`/`startyear` always opens on that fixed month. Elementor widget: **Display → Open On**.
 
 ### Hint line
@@ -149,6 +170,7 @@ The `AvailCalendar` class can also be used outside WordPress:
 | Today | Yesterday | Result |
 |-------|-----------|--------|
 | past  | —         | Grey text, no background |
+| no data yet | —   | Grey text, no background, not clickable (1.10.0) |
 | `0`   | `0` or past | Full red (unavailable) |
 | `0`   | `1`         | Green top-left / red bottom-right (AM free, PM taken) |
 | `1`   | `1` or absent | Full green (available) |

@@ -189,6 +189,12 @@
     color: var(--cal-muted);
 }
 
+/* NO DATA YET — like past: no day shown as available or unavailable before Beds24 answers (1.10.0) */
+.bac-day.bac-pending {
+    background: transparent;
+    color: var(--cal-muted);
+}
+
 /* FULL AVAILABLE — rule 3a */
 .bac-day.bac-available {
     background: var(--avail-bg);

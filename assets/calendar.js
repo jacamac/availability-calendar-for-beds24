@@ -68,6 +68,8 @@ class AvailCalendar {
         this.viewYear   = this.cfg.startYear  || now.getFullYear();
         this.viewMonth  = this.cfg.startMonth || (now.getMonth() + 1);  // 1-based
         this.avail      = {};
+        this._loaded    = false;            // 1.10.0: until Beds24 data has arrived, no day is available or clickable
+        this.LOAD_TIMEOUT = 5000;           // 1.10.0: hidden months are shown on the current month after this, data or not
         this.CACHE_TTL  = 5 * 60 * 1000;   // 5 minutes
         this.AVAIL_BASE = 'https://media.xmlcal.com/widget/1.00/scripts/availability.php';
         this.BOOK_BASE  = 'https://beds24.com/booking.php';
@@ -75,23 +77,26 @@ class AvailCalendar {
         // 1.9.0: open on the month of the first possible arrival, decided here from the loaded data
         // (the page HTML may be cached). An explicit startmonth/startyear keeps a fixed start.
         this._startFirstArrival = this.cfg.startFrom !== 'current' && !this.cfg.startMonth && !this.cfg.startYear;
-        if (this._startFirstArrival) {
-            // Months stay hidden (space kept) until the starting month is known: no flash of the current month
+        this._hidden = this._startFirstArrival;
+        if (this._hidden) {
+            // Months stay hidden (space kept) until the starting month is known: no flash of the current month.
+            // Never for good: if the data fails or is late, the current month is shown (as startFrom 'current').
             this.container.classList.add('bac-is-loading');
             this.container.setAttribute('aria-busy', 'true');
+            this._revealTimer = setTimeout(() => this._reveal(), this.LOAD_TIMEOUT);
         }
 
         this._buildDOM();
         this._render();
         this._fetchAvailability().then(() => {
-            if (this._startFirstArrival) {
-                const first = this._firstArrival();
+            // Still hidden: start on the first arrival. Already shown after the timeout: the months stay where they are.
+            if (this._hidden) {
+                const first = this._loaded ? this._firstArrival() : null;
                 if (first) {
                     this.viewYear  = first.getFullYear();
                     this.viewMonth = first.getMonth() + 1;
                 }
-                this.container.classList.remove('bac-is-loading');
-                this.container.removeAttribute('aria-busy');
+                this._reveal();
             }
             this._render();
             // Refresh every 5 minutes for long-lived tabs
@@ -146,6 +151,17 @@ class AvailCalendar {
         this._strip.className = 'bac-strip';
         this.container.appendChild(this._strip);
         if (hint) this.container.appendChild(hint);
+
+        // 1.10.0: a bookable day was clicked. Dispatched before the browser follows the link, for the page's own
+        // analytics; the plugin itself sends nothing. Not cancelable: the link works whether anyone listens or not.
+        this._strip.addEventListener('click', (e) => {
+            const a = e.target.closest('a[data-arrival]');
+            if (!a) return;
+            this.container.dispatchEvent(new CustomEvent('bac:book', {
+                bubbles: true,
+                detail:  { arrival: a.dataset.arrival, roomId: this.cfg.roomid || null },
+            }));
+        });
 
         // Keyboard navigation — scoped to this instance's container
         this.container.addEventListener('keydown', (e) => {
@@ -268,7 +284,7 @@ class AvailCalendar {
 
             const cell = document.createElement('div');
             cell.className = 'bac-day ' + cls + (isToday ? ' bac-today' : '');
-            cell.title     = cls === 'bac-past'
+            cell.title     = cls === 'bac-past' || cls === 'bac-pending'
                 ? dateIso
                 : bookable
                     ? this._t('book')
@@ -281,6 +297,7 @@ class AvailCalendar {
             if (bookable) {
                 const a   = document.createElement('a');
                 a.href    = this._bookingURL(dateIso);
+                a.dataset.arrival = dateIso;
                 if (!this.cfg.bookingUrl) {
                     // Beds24's booking page: a new tab, as before 1.8.0. The site's own page opens in this tab.
                     a.target  = '_blank';
@@ -306,6 +323,15 @@ class AvailCalendar {
         if      (this.viewMonth > 12) { this.viewMonth -= 12; this.viewYear++; }
         else if (this.viewMonth <  1) { this.viewMonth += 12; this.viewYear--; }
         this._render();
+    }
+
+    /* Show the hidden months (first-arrival mode): data arrived, failed, or LOAD_TIMEOUT passed */
+    _reveal() {
+        clearTimeout(this._revealTimer);
+        if (!this._hidden) return;
+        this._hidden = false;
+        this.container.classList.remove('bac-is-loading');
+        this.container.removeAttribute('aria-busy');
     }
 
     _atCurrentMonth() {
@@ -334,6 +360,7 @@ class AvailCalendar {
     /*
      * Rules:
      *   past                 → 'bac-past'
+     *   no data yet          → 'bac-pending'          (1.10.0: neither available nor unavailable)
      *   cur=0, prev=0|past   → 'bac-unavailable'      (rule 2a)
      *   cur=0, prev=1        → 'bac-split-avail-am'   (rule 2b)
      *   cur=1, prev=1|absent → 'bac-available'        (rule 3a)
@@ -341,6 +368,7 @@ class AvailCalendar {
      */
     _tileClass(dateObj) {
         if (dateObj < this.TODAY) return 'bac-past';
+        if (!this._loaded)        return 'bac-pending';
 
         const cur      = this._val(dateObj);
         const prevDate = new Date(dateObj);
@@ -403,6 +431,7 @@ class AvailCalendar {
     async _fetchAvailability() {
         if (!this.cfg.propid && !this.cfg.roomid) {
             this.avail = this._buildSampleData();
+            this._loaded = true;
             this._setStatus('Demo mode — configure a propid or roomid to show live data');
             return;
         }
@@ -410,6 +439,7 @@ class AvailCalendar {
         const cached = this._cacheRead();
         if (cached) {
             this.avail = cached;
+            this._loaded = true;
             this._setStatus('');
             return;
         }
@@ -419,8 +449,13 @@ class AvailCalendar {
         if (this.cfg.propid) params.set('propid', this.cfg.propid);
         this._setStatus('Loading\u2026');
         try {
-            const r    = await fetch(this.AVAIL_BASE + '?' + params);
-            this.avail = await r.json();
+            const r = await fetch(this.AVAIL_BASE + '?' + params);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+            // Same shape check as _cacheRead(): anything else is a failure, not availability
+            if (typeof data !== 'object' || data === null || Array.isArray(data)) throw new Error('Unexpected response');
+            this.avail   = data;
+            this._loaded = true;
             this._cacheWrite(this.avail);
             this._setStatus('');
         } catch(e) {
@@ -529,6 +564,7 @@ class AvailCalendar {
     /* Allow callers to cleanly tear down an instance */
     destroy() {
         clearInterval(this._refreshTimer);
+        clearTimeout(this._revealTimer);
         if (this.container) this.container.innerHTML = '';
     }
 }

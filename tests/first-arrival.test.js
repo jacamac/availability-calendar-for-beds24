@@ -1,5 +1,5 @@
 /**
- * Tests for AvailCalendar._firstArrival() and the ‹ floor (1.9.0).
+ * Tests for AvailCalendar._firstArrival() and the ‹ floor (1.9.0), and the state before the data arrives (1.10.0).
  * Run with `npm test` (node:test, no dependencies).
  */
 import { test } from 'node:test';
@@ -17,6 +17,7 @@ function calendar(avail, today = new Date(2026, 9, 22)) {
     const cal = Object.create(AvailCalendar.prototype);
     cal.TODAY = today;
     cal.avail = avail;
+    cal._loaded = true;
     return cal;
 }
 
@@ -103,4 +104,19 @@ test('‹ is not limited with startFrom "current" (as before 1.9.0)', () => {
     cal.viewMonth = 10;
     cal._shift(-1);
     assert.deepEqual([cal.viewYear, cal.viewMonth], [2026, 9]);
+});
+
+test('before the data arrives: no day is available or bookable, past days stay past', () => {
+    const cal = calendar({});
+    cal._loaded = false;
+    assert.equal(cal._tileClass(new Date(2026, 9, 21)), 'bac-past');
+    for (const d of [new Date(2026, 9, 22), new Date(2026, 10, 3), new Date(2027, 4, 1)]) {
+        assert.equal(cal._tileClass(d), 'bac-pending');
+        assert.equal(cal._isBookable(cal._tileClass(d)), false);
+    }
+});
+
+test('after the data arrives: tiles come from the data', () => {
+    const cal = calendar(range('2026-10-21', '2027-10-22', 1));
+    assert.equal(cal._tileClass(new Date(2026, 10, 3)), 'bac-available');
 });

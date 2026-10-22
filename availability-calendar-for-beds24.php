@@ -3,7 +3,7 @@
  * Plugin Name:       Availability Calendar for Beds24
  * Plugin URI:        https://github.com/jacamac/availability-calendar-for-beds24
  * Description:       Displays a Beds24 room or property availability calendar via the [avail_calendar] shortcode and an Elementor widget.
- * Version:           1.10.0
+ * Version:           1.10.1
  * Requires at least: 5.9
  * Requires PHP:      7.4
  * Author:            Jacques Leisy
@@ -33,7 +33,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BAC_VERSION', '1.10.0' );
+define( 'BAC_VERSION', '1.10.1' );
 define( 'BAC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BAC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BAC_DEFAULT_MONTHS_DESKTOP', 3 );
@@ -135,18 +135,18 @@ function bac_locale_to_bcp47( string $locale ): string {
 }
 
 /**
- * Detect the current language from TranslatePress, falling back to
+ * Detect the current locale from TranslatePress, falling back to
  * the WordPress locale and then 'en'.
  *
- * @return string BCP-47 language tag.
+ * @return string WordPress locale, e.g. 'en_GB'.
  */
-function bac_detect_language(): string {
+function bac_detect_wp_locale(): string {
 
 	// TranslatePress: current language of the request (WP locale format, e.g. de_DE).
 	// phpcs:disable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase -- third-party global.
 	global $TRP_LANGUAGE;
 	if ( ! empty( $TRP_LANGUAGE ) && is_string( $TRP_LANGUAGE ) ) {
-		return bac_locale_to_bcp47( $TRP_LANGUAGE );
+		return $TRP_LANGUAGE;
 	}
 	// phpcs:enable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
 
@@ -154,7 +154,7 @@ function bac_detect_language(): string {
 	if ( function_exists( 'trp_get_current_language' ) ) {
 		$trp_lang = trp_get_current_language();
 		if ( ! empty( $trp_lang ) ) {
-			return bac_locale_to_bcp47( $trp_lang );
+			return $trp_lang;
 		}
 	}
 
@@ -162,7 +162,7 @@ function bac_detect_language(): string {
 	if ( function_exists( 'trp_get_language' ) ) {
 		$trp_lang = trp_get_language();
 		if ( ! empty( $trp_lang ) ) {
-			return bac_locale_to_bcp47( $trp_lang );
+			return $trp_lang;
 		}
 	}
 
@@ -170,10 +170,20 @@ function bac_detect_language(): string {
 	// chosen language, so this is a safe fallback even without TranslatePress.
 	$wp_locale = get_locale();
 	if ( ! empty( $wp_locale ) ) {
-		return bac_locale_to_bcp47( $wp_locale );
+		return $wp_locale;
 	}
 
 	return 'en';
+}
+
+/**
+ * Detect the current language from TranslatePress, falling back to
+ * the WordPress locale and then 'en'.
+ *
+ * @return string BCP-47 language tag.
+ */
+function bac_detect_language(): string {
+	return bac_locale_to_bcp47( bac_detect_wp_locale() );
 }
 
 /**
@@ -204,6 +214,25 @@ function bac_resolve_lang( string $explicit = '' ): string {
 		}
 	}
 	return bac_detect_language();
+}
+
+/**
+ * Resolve the locale the calendar formats with (Intl, 1.10.1): the explicit
+ * language when valid, else the detected locale with its region (en_GB →
+ * en-GB), which decides the first day of the week. Falls back to the language.
+ *
+ * @param string $explicit Explicit language override.
+ * @return string BCP-47 locale tag.
+ */
+function bac_resolve_locale( string $explicit = '' ): string {
+	if ( ! empty( $explicit ) ) {
+		$sanitised = bac_sanitize_lang( $explicit );
+		if ( $sanitised ) {
+			return $sanitised;
+		}
+	}
+	$locale = bac_sanitize_lang( str_replace( '_', '-', bac_detect_wp_locale() ) );
+	return $locale ? $locale : bac_detect_language();
 }
 
 require_once BAC_PLUGIN_DIR . 'includes/booking-links.php';
@@ -286,8 +315,10 @@ function bac_register_instance( array $config, array $extra_attrs = array() ): s
 	// 1.9.0: a visible hint, for touch screens where the tiles' title tooltip never shows. Static markup
 	// (gettext) rather than JS text, so TranslatePress can translate it; calendar.js moves it below the months.
 	// Every bookable day is a link (site or Beds24 booking page), so the hint is always shown.
+	// 1.10.1: data-no-dynamic-translation keeps TranslatePress's browser-side lookup away from the months, which
+	// calendar.js renders already localised. Server-side translation of the hint and aria-label is unaffected.
 	return sprintf(
-		'<div id="%s" class="bac-wrapper"%s aria-label="%s"><p class="bac-hint">%s</p></div>',
+		'<div id="%s" class="bac-wrapper"%s aria-label="%s" data-no-dynamic-translation><p class="bac-hint">%s</p></div>',
 		esc_attr( $instance_id ),
 		$attrs_html,
 		esc_attr__( 'Availability calendar', 'availability-calendar-for-beds24' ),
@@ -348,7 +379,8 @@ function bac_sanitize_config( array $raw ): array {
 	// 'current' = current month, as before 1.9.0. An explicit startmonth/startyear takes precedence.
 	$config['startFrom'] = 'current' === sanitize_key( $raw['startfrom'] ?? '' ) ? 'current' : 'available';
 
-	$config['lang'] = bac_resolve_lang( $raw['lang'] ?? '' );
+	$config['lang']   = bac_resolve_lang( $raw['lang'] ?? '' );
+	$config['locale'] = bac_resolve_locale( $raw['lang'] ?? '' );
 
 	// Where a bookable day leads (1.8.0): the site's booking page /booking/ by default, in the page's language —
 	// TranslatePress adds its language prefix to home_url() (/en/booking/) — with ?arrivee=<date>&room_id=<roomid>;
@@ -489,7 +521,7 @@ function bac_footer_init(): void {
 	 * Safety rationale for the phpcs:ignore below:
 	 * $bac_instances is built entirely from bac_sanitize_config() output:
 	 *   - roomid/propid/nummonths/startmonth/startyear are cast via absint()
-	 *   - lang is validated against a strict BCP-47 regex
+	 *   - lang and locale are validated against a strict BCP-47 regex
 	 *   - startFrom is one of two literals
 	 *   - beds24Booking is a boolean; bookingUrl is home_url( '/booking/' ) through esc_url_raw()
 	 * wp_json_encode() then serialises the array to safe JSON with all

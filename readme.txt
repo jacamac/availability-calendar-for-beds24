@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.9.0
+Stable tag:         1.10.0
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,6 +70,12 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.10.0 =
+* Fix: no day shows as available, or is clickable, before the Beds24 data has arrived, in both startfrom modes: availability comes only from Beds24. Until then days from today are drawn like past days (class bac-pending). Before 1.10.0 every day briefly showed as available.
+* Fix: in startfrom="available" mode the calendar can no longer stay hidden: on a failed availability call (network error, HTTP error, unexpected response) it shows the current month at once, and after 5 seconds without an answer it shows the current month; late data then fills the days without moving the months.
+* New: DOM event bac:book on the calendar wrapper when a bookable day is clicked, dispatched before the link is followed (bubbles, not cancelable), detail { arrival: 'YYYY-MM-DD', roomId }. For the site's analytics; the plugin sends nothing itself.
+* Fix: an HTTP error or a non-object response is no longer stored as availability.
 
 = 1.9.0 =
 * New: the calendar opens on the month of the first possible arrival (a day the calendar links to booking: available, or free from the afternoon), from today onwards; with several months shown, that month comes first. If the current month has one, or the loaded data has none, it opens on the current month as before. ‹ goes back to the current month and stops there. Availability is unchanged: this only chooses the first month shown.

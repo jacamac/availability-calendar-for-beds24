@@ -166,6 +166,20 @@ class Avail_Calendar_Widget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_control(
+			'startfrom',
+			array(
+				'label'       => esc_html__( 'Open On', 'availability-calendar-for-beds24' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'default'     => 'available',
+				'options'     => array(
+					'available' => esc_html__( 'First month with availability', 'availability-calendar-for-beds24' ),
+					'current'   => esc_html__( 'Current month', 'availability-calendar-for-beds24' ),
+				),
+				'description' => esc_html__( 'Ignored when a Start Month or Start Year is set.', 'availability-calendar-for-beds24' ),
+			)
+		);
+
+		$this->add_control(
 			'startmonth',
 			array(
 				'label'              => esc_html__( 'Start Month', 'availability-calendar-for-beds24' ),
@@ -173,7 +187,7 @@ class Avail_Calendar_Widget extends \Elementor\Widget_Base {
 				'default'            => '0',
 				'frontend_available' => true,
 				'options'            => array(
-					'0'  => esc_html__( 'Current month', 'availability-calendar-for-beds24' ),
+					'0'  => esc_html__( 'Not set (see Open On)', 'availability-calendar-for-beds24' ),
 					'1'  => esc_html__( 'January', 'availability-calendar-for-beds24' ),
 					'2'  => esc_html__( 'February', 'availability-calendar-for-beds24' ),
 					'3'  => esc_html__( 'March', 'availability-calendar-for-beds24' ),
@@ -701,6 +715,7 @@ class Avail_Calendar_Widget extends \Elementor\Widget_Base {
 			'nummonthsmobile' => $this->slider_size( $s['nummonths_mobile'] ?? array(), BAC_DEFAULT_MONTHS_MOBILE ),
 			'startmonth'      => $s['startmonth'] ?? '',
 			'startyear'       => $s['startyear'] ?? '',
+			'startfrom'       => $s['startfrom'] ?? '',
 			'lang'            => $s['lang'] ?? '',
 			'beds24_booking'  => $s['beds24_booking'] ?? '',
 			'scheme'          => $s['scheme'] ?? 'solid',
@@ -735,6 +750,9 @@ class Avail_Calendar_Widget extends \Elementor\Widget_Base {
 					'class'        => true,
 					'aria-label'   => true,
 					'data-bac-cfg' => true,
+				),
+				'p'   => array(
+					'class' => true,
 				),
 			)
 		);
@@ -774,6 +792,7 @@ class Avail_Calendar_Widget extends \Elementor\Widget_Base {
 			numMonthsMobile: _bacSz( settings.nummonths_mobile, 1 ),
 			startMonth:      parseInt( settings.startmonth, 10 ) > 0 ? parseInt( settings.startmonth, 10 ) : null,
 			startYear:       parseInt( settings.startyear,   10 ) > 0 ? parseInt( settings.startyear,   10 ) : null,
+			startFrom:       'current' === _bacPlain( 'startfrom' ) ? 'current' : 'available',
 			lang:            _bacPlain( 'lang' ) || 'en',
 			scheme:       _bacPlain( 'scheme' ) || 'solid',
 			schemeShape:  _bacPlain( 'scheme_shape' ),

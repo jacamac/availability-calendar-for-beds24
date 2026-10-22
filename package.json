@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint:js": "eslint assets/",
+    "lint:js": "eslint assets/ tests/",
     "lint:css": "stylelint \"assets/*.css\"",
-    "lint": "npm run lint:js && npm run lint:css"
+    "lint": "npm run lint:js && npm run lint:css",
+    "test": "node --test tests/first-arrival.test.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

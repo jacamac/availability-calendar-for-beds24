@@ -22,8 +22,9 @@
  *     containerId: 'bac-1',
  *     roomid:      12345,    // OR propid, not both
  *     numMonths:   5,
- *     startMonth:  null,     // 1-based, null = current
- *     startYear:   null,     // null = current
+ *     startMonth:  null,     // 1-based, null = see startFrom
+ *     startYear:   null,     // null = see startFrom
+ *     startFrom:   'available', // 'available' = month of the first possible arrival, 'current' = current month
  *     lang:        'fr',
  *   });
  */
@@ -43,6 +44,7 @@ class AvailCalendar {
             numMonthsMobile: null,
             startMonth:     null,
             startYear:      null,
+            startFrom:      'available',
             lang:           'en',
             bookingUrl:     null,   // the site's /booking/ page in the page language (PHP); null = Beds24's page
             scheme:        'solid',
@@ -70,9 +72,27 @@ class AvailCalendar {
         this.AVAIL_BASE = 'https://media.xmlcal.com/widget/1.00/scripts/availability.php';
         this.BOOK_BASE  = 'https://beds24.com/booking.php';
 
+        // 1.9.0: open on the month of the first possible arrival, decided here from the loaded data
+        // (the page HTML may be cached). An explicit startmonth/startyear keeps a fixed start.
+        this._startFirstArrival = this.cfg.startFrom !== 'current' && !this.cfg.startMonth && !this.cfg.startYear;
+        if (this._startFirstArrival) {
+            // Months stay hidden (space kept) until the starting month is known: no flash of the current month
+            this.container.classList.add('bac-is-loading');
+            this.container.setAttribute('aria-busy', 'true');
+        }
+
         this._buildDOM();
         this._render();
         this._fetchAvailability().then(() => {
+            if (this._startFirstArrival) {
+                const first = this._firstArrival();
+                if (first) {
+                    this.viewYear  = first.getFullYear();
+                    this.viewMonth = first.getMonth() + 1;
+                }
+                this.container.classList.remove('bac-is-loading');
+                this.container.removeAttribute('aria-busy');
+            }
             this._render();
             // Refresh every 5 minutes for long-lived tabs
             this._refreshTimer = setInterval(() => {
@@ -95,6 +115,8 @@ class AvailCalendar {
 
     /* ─── DOM scaffold ────────────────────────────────────── */
     _buildDOM() {
+        // The hint line is rendered by PHP (gettext, translatable by TranslatePress): keep it, below the months
+        const hint = this.container.querySelector('.bac-hint');
         this.container.innerHTML = '';
 
         // Navigation bar
@@ -123,6 +145,7 @@ class AvailCalendar {
         this._strip = document.createElement('div');
         this._strip.className = 'bac-strip';
         this.container.appendChild(this._strip);
+        if (hint) this.container.appendChild(hint);
 
         // Keyboard navigation — scoped to this instance's container
         this.container.addEventListener('keydown', (e) => {
@@ -192,6 +215,7 @@ class AvailCalendar {
             this._strip.appendChild(this._renderMonth(y, m));
             if (++m > 12) { m = 1; y++; }
         }
+        if (this._startFirstArrival) this._btnPrev.disabled = this._atCurrentMonth();
     }
 
     /* ─── Render a single month ─────────────────────────────── */
@@ -276,10 +300,34 @@ class AvailCalendar {
 
     /* ─── Navigation ──────────────────────────────────────── */
     _shift(delta) {
+        // Opening on the first possible arrival: ‹ goes back as far as the current month, no further
+        if (delta < 0 && this._startFirstArrival && this._atCurrentMonth()) return;
         this.viewMonth += delta;
         if      (this.viewMonth > 12) { this.viewMonth -= 12; this.viewYear++; }
         else if (this.viewMonth <  1) { this.viewMonth += 12; this.viewYear--; }
         this._render();
+    }
+
+    _atCurrentMonth() {
+        return this.viewYear * 12 + this.viewMonth <= this.TODAY.getFullYear() * 12 + this.TODAY.getMonth() + 1;
+    }
+
+    /* ─── First possible arrival ──────────────────────────── */
+    /*
+     * The first day from today that _render() links to booking (_isBookable: available,
+     * or free from the afternoon), or null. Searched only up to the last date in the data:
+     * _val() reads a missing date as available, so past the end of the data every day
+     * would look bookable. Dates missing inside the data count as available, as displayed.
+     */
+    _firstArrival() {
+        const dates = Object.keys(this.avail || {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+        if (!dates.length) return null;
+        const [y, m, d] = dates[dates.length - 1].split('-').map(Number);
+        const last = new Date(y, m - 1, d);
+        for (const dt = new Date(this.TODAY); dt <= last; dt.setDate(dt.getDate() + 1)) {
+            if (this._isBookable(this._tileClass(dt))) return new Date(dt);
+        }
+        return null;
     }
 
     /* ─── Tile classification ─────────────────────────────── */

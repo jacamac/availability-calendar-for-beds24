@@ -109,7 +109,7 @@ Styling: class `.bac-hint`, with the custom properties `--bac-hint-size` (defaul
 
 ### Site design tokens
 
-Since 1.10.2 the calendar takes its typography, nav-button border and hover-lift shadow from the site's design-system custom properties when they exist, with the current site values as fallbacks: `--font-body` (Lora), `--font-weight-semibold` (month title, 400), `--font-weight-medium` (weekday row and days, 500), `--font-weight-bold` (today, 700), `--color-border-soft` (nav buttons, `rgb(42 37 32 / 18%)`) and `--shadow-lift` (`data-hover="lift"`). Tile colours stay on the `--cal-*`, `--avail-*` and `--unavail-*` properties.
+Since 1.10.2 the calendar takes its typography, nav-button border and hover-lift shadow from the site's design-system custom properties when they exist: `--font-body`, `--font-weight-regular` (month title, since 1.10.3), `--font-weight-medium` (weekday row and days), `--font-weight-bold` (today), `--color-border-soft` (nav buttons) and `--shadow-lift` (`data-hover="lift"`). Since 1.10.3 the fallbacks are neutral and generic, never a font name or a copy of the site's value: `sans-serif`, `400` / `500` / `700`, `#ccc`, `0 2px 8px rgb(0 0 0 / 15%)`. The weekday letters stay uppercase (a tiny functional label); the month title is not tracked. Tile colours stay on the `--cal-*`, `--avail-*` and `--unavail-*` properties. Tile colours stay on the `--cal-*`, `--avail-*` and `--unavail-*` properties.
 
 ### Language detection
 

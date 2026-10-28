@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.10.1
+Stable tag:         1.10.2
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,6 +70,9 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.10.2 =
+* Style: the calendar uses the site's design-system tokens instead of hardcoded values: font --font-body (was the system font stack), weights --font-weight-semibold / --font-weight-medium / --font-weight-bold (month title 600 becomes 400 on the current site; today in data-today="bold" is 700, was 800), nav-button border --color-border-soft and hover-lift shadow --shadow-lift. Fallbacks are the current site values.
 
 = 1.10.1 =
 * Fix: TranslatePress's dynamic translation no longer re-translates the calendar as French on translated pages (weekday row « Sun Mon Kill Wed… » in English, « Mo Di Mi Do Fr Es ist Also » in German, « Lun Mar Mare… » in Italian). The wrapper (printed by PHP and set by calendar.js) and every element calendar.js creates carry data-no-dynamic-translation; no trp-ajax.php call from the calendar any more. The hint and the aria-label still go through gettext and TranslatePress's server-side translation.

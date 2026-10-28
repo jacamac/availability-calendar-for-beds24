@@ -107,6 +107,10 @@ It is static markup printed by PHP through gettext (`availability-calendar-for-b
 
 Styling: class `.bac-hint`, with the custom properties `--bac-hint-size` (default `13px`), `--bac-hint-color` (default `--cal-text`) and `--bac-hint-align` (default `center`).
 
+### Site design tokens
+
+Since 1.10.2 the calendar takes its typography, nav-button border and hover-lift shadow from the site's design-system custom properties when they exist, with the current site values as fallbacks: `--font-body` (Lora), `--font-weight-semibold` (month title, 400), `--font-weight-medium` (weekday row and days, 500), `--font-weight-bold` (today, 700), `--color-border-soft` (nav buttons, `rgb(42 37 32 / 18%)`) and `--shadow-lift` (`data-hover="lift"`). Tile colours stay on the `--cal-*`, `--avail-*` and `--unavail-*` properties.
+
 ### Language detection
 
 When `lang` is omitted, the language is detected in this order: the `lang` attribute → TranslatePress's `$TRP_LANGUAGE` global (current request language) → legacy TranslatePress functions → WordPress locale → `en`.

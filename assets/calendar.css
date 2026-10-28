@@ -48,7 +48,7 @@
     --bac-pad:    24px;
     --bac-pad-x:  16px;
 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: var(--font-body, Lora, serif);
     background: var(--cal-bg);
     color: var(--cal-text);
     padding: var(--bac-pad) var(--bac-pad-x);
@@ -65,7 +65,7 @@
 
 .bac-nav button {
     background: none;
-    border: 1px solid rgb(128 128 128 / 25%);
+    border: 1px solid var(--color-border-soft, rgb(42 37 32 / 18%));
     border-radius: 6px;
     padding: 5px 11px;
     cursor: pointer;
@@ -129,7 +129,7 @@
 
 .bac-month-title {
     font-size: 15px;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold, 400);
     text-align: center;
     color: var(--cal-header);
     margin-bottom: 10px;
@@ -151,7 +151,7 @@
 .bac-dow-cell {
     text-align: center;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium, 500);
     color: var(--cal-dow);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -166,7 +166,7 @@
     align-items: center;
     justify-content: center;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium, 500);
     position: relative;
     overflow: hidden;
     user-select: none;
@@ -250,7 +250,7 @@
 /* Today ring */
 .bac-day.bac-today {
     box-shadow: inset 0 0 0 2.5px var(--cal-today-ring);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold, 700);
 }
 
 /* Bookable tile — pointer cursor */
@@ -485,7 +485,7 @@
 .bac-wrapper[data-hover="lift"] a .bac-day.bac-split-avail-pm:hover {
     filter: none;
     transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgb(0 0 0 / 22%);
+    box-shadow: var(--shadow-lift, 0 4px 14px rgb(0 0 0 / 22%));
 }
 
 /* ─── Today indicator ───────────────────────────────────────
@@ -506,13 +506,13 @@
 
 .bac-wrapper[data-today="bold"] .bac-day.bac-today {
     box-shadow: none;
-    font-weight: 800;
+    font-weight: var(--font-weight-bold, 700);
     font-size: 15px;
 }
 
 .bac-wrapper[data-today="none"] .bac-day.bac-today {
     box-shadow: none;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium, 500);
 }
 
 /* ─── Nav: top-right ────────────────────────────────────── */

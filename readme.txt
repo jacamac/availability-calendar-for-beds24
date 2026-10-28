@@ -4,7 +4,7 @@ Tags:               beds24, availability, calendar, booking, hotel, b&b
 Requires at least:  5.9
 Tested up to:       6.9
 Requires PHP:       7.4
-Stable tag:         1.10.2
+Stable tag:         1.10.3
 License:            GPLv2 or later
 License URI:        https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,6 +70,9 @@ The device tier is decided in the visitor's browser from the viewport width, and
   availability data for 5 minutes and is cleared when the browser tab is closed.
 
 == Changelog ==
+
+= 1.10.3 =
+* Style: neutral fallbacks for the design-system tokens, so a font or palette change on the site never needs a plugin update: `--font-body` falls back to `sans-serif` (no font name left), `--color-border-soft` to `#ccc`, `--shadow-lift` to `0 2px 8px rgb(0 0 0 / 15%)`. The month title reads `--font-weight-regular` (was `--font-weight-semibold`, regular on the site too) and loses its -0.01em letter-spacing. The weekday letters keep their uppercase. No change where the site defines the tokens.
 
 = 1.10.2 =
 * Style: the calendar uses the site's design-system tokens instead of hardcoded values: font --font-body (was the system font stack), weights --font-weight-semibold / --font-weight-medium / --font-weight-bold (month title 600 becomes 400 on the current site; today in data-today="bold" is 700, was 800), nav-button border --color-border-soft and hover-lift shadow --shadow-lift. Fallbacks are the current site values.

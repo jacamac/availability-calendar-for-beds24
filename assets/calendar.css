@@ -48,7 +48,7 @@
     --bac-pad:    24px;
     --bac-pad-x:  16px;
 
-    font-family: var(--font-body, Lora, serif);
+    font-family: var(--font-body, sans-serif);
     background: var(--cal-bg);
     color: var(--cal-text);
     padding: var(--bac-pad) var(--bac-pad-x);
@@ -65,7 +65,7 @@
 
 .bac-nav button {
     background: none;
-    border: 1px solid var(--color-border-soft, rgb(42 37 32 / 18%));
+    border: 1px solid var(--color-border-soft, #ccc);
     border-radius: 6px;
     padding: 5px 11px;
     cursor: pointer;
@@ -129,11 +129,10 @@
 
 .bac-month-title {
     font-size: 15px;
-    font-weight: var(--font-weight-semibold, 400);
+    font-weight: var(--font-weight-regular, 400);
     text-align: center;
     color: var(--cal-header);
     margin-bottom: 10px;
-    letter-spacing: -0.01em;
 }
 
 /* ── Day-of-week header + day grid ── */
@@ -485,7 +484,7 @@
 .bac-wrapper[data-hover="lift"] a .bac-day.bac-split-avail-pm:hover {
     filter: none;
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lift, 0 4px 14px rgb(0 0 0 / 22%));
+    box-shadow: var(--shadow-lift, 0 2px 8px rgb(0 0 0 / 15%));
 }
 
 /* ─── Today indicator ───────────────────────────────────────
